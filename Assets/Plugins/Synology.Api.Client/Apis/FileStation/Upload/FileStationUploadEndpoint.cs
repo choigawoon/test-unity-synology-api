@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 //using System.IO.Abstractions;
 using System.Linq;
@@ -128,9 +129,50 @@ namespace Synology.Api.Client.Apis.FileStation.Upload
             var urlEncodedFilename = Uri.EscapeDataString(filename);
             var headerValue = $@"form-data; name=""file""; filename=""{filename}""; filename*=UTF-8''{urlEncodedFilename}";
             var bytes = Encoding.UTF8.GetBytes(headerValue);
-            headerValue = bytes.Aggregate("", (current, b) => current + (char) b);
+
+            // ���� ��θ� �����մϴ�. �� ��δ� ���ϴ� ��� ������ �� �ֽ��ϴ�.
+            string filePath = @"D:\project_albaam\output.txt";
+            using var fileStream = new FileStream(filePath, FileMode.Create);
+            using var streamWriter = new StreamWriter(fileStream);
+            headerValue = bytes.Aggregate("", (current, b) => {
+                var b156 = '\u009c';
+                var b128 = '\u0080';
+                var b154 = '\u009a';
+                var sum = current + (char)b;
+                if (b == 128)
+                {
+                    sum = current + b128;
+                    //Encoding.Unicode.GetString()
+                }
+                else if (b == 154)
+                {
+                    sum = current + b154;
+                }
+                else if (b == 156)
+                {
+                    sum = current + b156;
+                }
+                UnityEngine.Debug.Log(b);
+                UnityEngine.Debug.Log((char)b);
+                UnityEngine.Debug.Log(current);
+                UnityEngine.Debug.Log(sum);
+
+                Console.SetOut(streamWriter);
+
+                Console.WriteLine(b);
+                Console.WriteLine((char)b);
+                Console.WriteLine(current);
+                Console.WriteLine(sum);
+                return sum;
+            });
+
+            // �ʿ��ϴٸ�, �ܼ� ����� �ٽ� �⺻ ������� �ǵ��� �� �ֽ��ϴ�.
+            StreamWriter standardOutput = new StreamWriter(Console.OpenStandardOutput());
+            standardOutput.AutoFlush = true;
+            Console.SetOut(standardOutput);
+            Console.WriteLine("����Ϸ�");
             fileContent.Headers.Add("Content-Disposition", headerValue);
-            
+
             return fileContent;
         }
     }
